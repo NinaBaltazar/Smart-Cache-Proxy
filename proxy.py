@@ -4,10 +4,6 @@ import requests
 from flask import Flask, request, Response, render_template, redirect, url_for
 from dotenv import load_dotenv
 
-# Contadores de hits e misses
-cache_hits = 0
-cache_misses = 0
-
 load_dotenv()
 
 app = Flask(__name__)
@@ -20,27 +16,27 @@ redis_client = redis.Redis(
 
 DEFAULT_TTL = int(os.getenv("DEFAULT_TTL", 60))
 
+cache_hits = 0
+cache_misses = 0
+
+
 @app.route('/<path:url>', methods=['GET'])
 def proxy(url):
+    global cache_hits, cache_misses
+
     full_url = f"http://{url}"
 
     cached = redis_client.get(full_url)
     if cached:
-        print(f"[CACHE HIT] {full_url}")
-        if cached:
-            global cache_hits
         cache_hits += 1
-        ...
-    else:
-        global cache_misses
-        cache_misses += 1
-        ...
-
+        print(f"[CACHE HIT] {full_url}")
         return Response(cached, content_type='application/octet-stream')
 
     print(f"[CACHE MISS] {full_url}")
+    cache_misses += 1
+
     try:
-        # Busca ETag salva (se existir)
+        # ETag support
         etag_key = f"{full_url}:etag"
         etag = redis_client.get(etag_key)
 
@@ -49,7 +45,7 @@ def proxy(url):
             headers['If-None-Match'] = etag.decode()
 
         origin_response = requests.get(full_url, headers=headers)
-        
+
         if origin_response.status_code == 304:
             print(f"[NOT MODIFIED] {full_url}")
             cached = redis_client.get(full_url)
@@ -67,7 +63,6 @@ def proxy(url):
             except (IndexError, ValueError):
                 pass
 
-        # Armazena conteúdo + ETag
         redis_client.setex(full_url, ttl, content)
         if 'ETag' in headers:
             redis_client.setex(etag_key, ttl, headers['ETag'])
@@ -76,17 +71,7 @@ def proxy(url):
 
     except Exception as e:
         return f"Erro ao buscar {full_url}: {str(e)}", 500
-    
 
-@app.route('/clear_cache', methods=['POST'])
-def clear_cache():
-    keys = redis_client.keys('*')
-    for key in keys:
-        redis_client.delete(key)
-    global cache_hits, cache_misses
-    cache_hits = 0
-    cache_misses = 0
-    return redirect(url_for('status'))
 
 @app.route('/status', methods=['GET'])
 def status():
@@ -103,16 +88,25 @@ def status():
             'url': key_str,
             'ttl': ttl
         })
+
     return render_template(
-    "status.html",
-    cache_size=len(urls),
-    cached_urls=urls,
-    cache_hits=cache_hits,
-    cache_misses=cache_misses
-)
+        "status.html",
+        cache_size=len(urls),
+        cached_urls=urls,
+        cache_hits=cache_hits,
+        cache_misses=cache_misses
+    )
 
 
-    return render_template("status.html", cache_size=len(urls), cached_urls=urls)
+@app.route('/clear_cache', methods=['POST'])
+def clear_cache():
+    global cache_hits, cache_misses
+    keys = redis_client.keys('*')
+    for key in keys:
+        redis_client.delete(key)
+    cache_hits = 0
+    cache_misses = 0
+    return redirect(url_for('status'))
 
 
 if __name__ == "__main__":
