@@ -110,9 +110,10 @@
          <strong>Total de URLs no cache:</strong> {{ cache_size }}
        </div>
    
-       <div class="chart-container mb-4">
-         <canvas id="cacheChart" height="100"></canvas>
-       </div>
+       <div class="chart-container mb-4 mx-auto" style="max-width: 400px; width: 100%;">
+        <canvas id="cacheChart"></canvas>
+      </div>
+            
    
        <table class="table table-bordered table-hover">
          <thead>
@@ -135,7 +136,7 @@
      <!-- Chart.js + variáveis -->
      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
      <script>
-         const cacheHitCount = JSON.parse('{{ cache_hits | tojson | safe }}');
+         const cacheHits = JSON.parse('{{ cache_hits | tojson | safe }}');
          const cacheMisses = JSON.parse('{{ cache_misses | tojson | safe }}');
      </script>
      <script src="{{ url_for('static', filename='chart.js') }}"></script>
