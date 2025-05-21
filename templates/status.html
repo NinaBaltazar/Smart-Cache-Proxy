@@ -96,6 +96,15 @@
          border-radius: 12px;
          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
        }
+
+       .card, .chart-container, .table {
+        transition: box-shadow 0.3s ease;
+        }
+
+        .card:hover, .chart-container:hover, .table:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
      </style>
    </head>
    <body>
@@ -110,9 +119,10 @@
          <strong>Total de URLs no cache:</strong> {{ cache_size }}
        </div>
    
-       <div class="chart-container mb-4 mx-auto" style="max-width: 400px; width: 100%;">
+       <div class="chart-container mb-4 mx-auto" style="max-width: 420px;">
         <canvas id="cacheChart"></canvas>
       </div>
+      
             
    
        <table class="table table-bordered table-hover">
