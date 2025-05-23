@@ -5,6 +5,7 @@ from flask import Flask, request, Response, render_template, redirect, url_for
 from dotenv import load_dotenv
 from urllib.parse import unquote
 
+
 load_dotenv()
 
 app = Flask(__name__)
@@ -19,6 +20,7 @@ DEFAULT_TTL = int(os.getenv("DEFAULT_TTL", 60))
 
 cache_hits = 0
 cache_misses = 0
+
 
 @app.route('/', methods=['GET'])
 def proxy():
@@ -40,6 +42,7 @@ def proxy():
     print(f"[CACHE MISS] {full_url}")
 
     try:
+
         etag_key = f"{full_url}:etag"
         etag = redis_client.get(etag_key)
 
@@ -50,13 +53,17 @@ def proxy():
         origin_response = requests.get(full_url, headers=headers)
 
         if origin_response.status_code == 304:
+
+
             cached = redis_client.get(full_url)
             return Response(cached, content_type='application/octet-stream')
 
         content = origin_response.content
+
         origin_headers = origin_response.headers
 
         cache_control = origin_headers.get("Cache-Control", "")
+
         ttl = DEFAULT_TTL
         if "max-age" in cache_control:
             try:
@@ -65,10 +72,12 @@ def proxy():
                 pass
 
         redis_client.setex(full_url, ttl, content)
+
         if 'ETag' in origin_headers:
             redis_client.setex(etag_key, ttl, origin_headers['ETag'])
 
         return Response(content, content_type=origin_headers.get("Content-Type", "application/octet-stream"))
+
 
     except Exception as e:
         return f"Erro ao buscar {full_url}: {str(e)}", 500
