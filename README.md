@@ -28,9 +28,9 @@ pip3 install -r requirements.txt
 Crie um arquivo .env na raiz do projeto com valores padrão segue exemplo:
 
 ```bash
-REDIS_HOST=localhost
-REDIS_PORT=6379
-DEFAULT_TTL=60
+REDIS_HOST=<localhost>
+REDIS_PORT=<porta_do_redis>
+DEFAULT_TTL=<numero_do_default_ttl>
 ```
 ### 4. Suba o ambiente com Docker Compose
 
